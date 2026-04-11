@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800" role="img" aria-labelledby="title desc">
+  <title id="title">Two BHK apartment</title>
+  <desc id="desc">Illustration of a clean two bedroom apartment.</desc>
+  <rect width="1200" height="800" fill="#eef8f7"/>
+  <rect x="190" y="140" width="820" height="520" rx="16" fill="#ffffff" stroke="#b8d7d1" stroke-width="6"/>
+  <rect x="250" y="210" width="320" height="190" fill="#dff3f0"/>
+  <rect x="630" y="210" width="320" height="190" fill="#dff3f0"/>
+  <rect x="250" y="440" width="700" height="160" fill="#f5efe0"/>
+  <text x="600" y="725" font-size="44" text-anchor="middle" fill="#3f6660" font-family="Arial, sans-serif">2BHK Apartment</text>
+</svg>

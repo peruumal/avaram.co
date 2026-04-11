@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800" role="img" aria-labelledby="title desc">
+  <title id="title">Apartment exterior with neem trees</title>
+  <desc id="desc">Simple illustration of a calm apartment building surrounded by trees.</desc>
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#dff1ff"/>
+      <stop offset="100%" stop-color="#f7fbff"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="800" fill="url(#sky)"/>
+  <rect x="320" y="250" width="560" height="360" rx="12" fill="#f0efe8" stroke="#c5c2b5"/>
+  <rect x="370" y="320" width="90" height="90" fill="#a6d4f3"/>
+  <rect x="500" y="320" width="90" height="90" fill="#a6d4f3"/>
+  <rect x="630" y="320" width="90" height="90" fill="#a6d4f3"/>
+  <rect x="760" y="320" width="90" height="90" fill="#a6d4f3"/>
+  <rect x="560" y="470" width="90" height="140" fill="#8a6a52"/>
+  <circle cx="230" cy="280" r="95" fill="#6ea94b"/>
+  <circle cx="180" cy="340" r="70" fill="#6ea94b"/>
+  <circle cx="970" cy="270" r="90" fill="#6ea94b"/>
+  <circle cx="1030" cy="340" r="70" fill="#6ea94b"/>
+  <rect x="0" y="610" width="1200" height="190" fill="#b8d79d"/>
+</svg>

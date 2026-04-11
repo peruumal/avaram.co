@@ -1,0 +1,133 @@
+/* Editor-only adjustments so Gutenberg canvas mirrors the live site layout. */
+
+.editor-styles-wrapper {
+    font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+    color: #1c2c2d;
+    line-height: 1.55;
+    background: radial-gradient(circle at 20% 10%, #f8fbf0 0%, #edf5ff 40%, #e5efe8 100%);
+    padding: 1.5rem;
+}
+
+.editor-styles-wrapper .block-editor-block-list__layout {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 2rem;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 18px 40px rgba(31, 55, 49, 0.16);
+}
+
+.editor-styles-wrapper .is-root-container>.wp-block,
+.editor-styles-wrapper .is-root-container>* {
+    max-width: 100%;
+}
+
+.editor-styles-wrapper h1,
+.editor-styles-wrapper .wp-block-heading {
+    line-height: 1.2;
+}
+
+.editor-styles-wrapper h2 {
+    line-height: 1.25;
+}
+
+.editor-styles-wrapper .lead {
+    font-size: 1.08rem;
+    max-width: 68ch;
+}
+
+.editor-styles-wrapper .highlights {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin: 1rem 0 0.4rem;
+}
+
+.editor-styles-wrapper .pill {
+    display: inline-block;
+    padding: 0.35rem 0.7rem;
+    border-radius: 999px;
+    background: #edf7f0;
+    border: 1px solid #cae6d4;
+    font-weight: 600;
+    font-size: 0.92rem;
+}
+
+.editor-styles-wrapper .wp-block-columns.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin-top: 1.25rem;
+}
+
+.editor-styles-wrapper .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+    margin-top: 1.25rem;
+}
+
+.editor-styles-wrapper .wp-block-columns.grid>.wp-block-column {
+    margin: 0;
+}
+
+.editor-styles-wrapper .card {
+    background: #fff;
+    border: 1px solid #d5e5dd;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.editor-styles-wrapper .card h2 {
+    margin-top: 0;
+    font-size: 1.1rem;
+}
+
+.editor-styles-wrapper .btn {
+    display: inline-block;
+    text-decoration: none;
+    margin-top: 0.5rem;
+    padding: 0.45rem 0.75rem;
+    border-radius: 8px;
+    background: #1f7a5d;
+    color: #fff;
+    font-weight: 600;
+}
+
+.editor-styles-wrapper .btn-whatsapp {
+    background: #1fa255;
+}
+
+.editor-styles-wrapper .btn-secondary {
+    background: #395e53;
+}
+
+.editor-styles-wrapper .cta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.7rem;
+}
+
+.editor-styles-wrapper .clean-list {
+    margin: 0;
+    padding-left: 1.1rem;
+}
+
+@media (max-width: 640px) {
+    .editor-styles-wrapper {
+        padding: 0.8rem;
+    }
+
+    .editor-styles-wrapper .block-editor-block-list__layout {
+        padding: 1.25rem;
+    }
+
+    .editor-styles-wrapper .wp-block-columns.grid {
+        grid-template-columns: 1fr;
+    }
+
+    .editor-styles-wrapper .grid {
+        grid-template-columns: 1fr;
+    }
+}

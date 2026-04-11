@@ -1,0 +1,22 @@
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+
+# Logs and temporary files
+*.log
+logs/
+cache/
+tmp/
+
+# WordPress runtime and generated content
+wordpress/wp-content/cache/
+wordpress/wp-content/upgrade/
+wordpress/wp-content/uploads/
+wordpress/wp-content/ai1wm-backups/
+
+# Local environment secrets
+wordpress/wp-config.php
+
+# Runtime booking data (do not store guest PII in git)
+data/bookings.json
