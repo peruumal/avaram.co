@@ -47,15 +47,23 @@ add_filter('the_content', 'avaramco_rewrite_legacy_content_urls', 20);
 
 function avaramco_rewrite_home_page_links(string $content): string
 {
-    $linkMap = [
-        'href="about"' => 'href="' . home_url('/?page_id=6') . '"',
-        'href="services"' => 'href="' . home_url('/?page_id=10') . '"',
-        'href="photos"' => 'href="' . home_url('/?page_id=11') . '"',
-        'href="calendar"' => 'href="' . home_url('/?page_id=12') . '"',
-        'href="directions"' => 'href="' . home_url('/?page_id=8') . '"',
-        'href="contact"' => 'href="' . home_url('/?page_id=7') . '"',
-        'href="admin"' => 'href="' . home_url('/admin.php') . '"',
+    $pageSlugs = [
+        'about' => 'about',
+        'services' => 'services',
+        'photos' => 'photos',
+        'calendar' => 'calendar',
+        'directions' => 'directions',
+        'contact' => 'contact',
     ];
+
+    $linkMap = [];
+    foreach ($pageSlugs as $source => $slug) {
+        $page = get_page_by_path($slug);
+        $targetUrl = $page instanceof WP_Post ? get_permalink($page) : home_url('/' . $slug . '/');
+        $linkMap['href="' . $source . '"'] = 'href="' . esc_url($targetUrl) . '"';
+    }
+
+    $linkMap['href="admin"'] = 'href="' . esc_url(home_url('/admin.php')) . '"';
 
     return str_replace(array_keys($linkMap), array_values($linkMap), $content);
 }

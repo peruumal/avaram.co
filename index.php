@@ -1,6 +1,16 @@
 <?php
-$wordpressHome = '/wordpress/';
+declare(strict_types=1);
 
+$host = $_SERVER['HTTP_HOST'] ?? '';
+$isProductionHost = $host === 'avaram.co' || $host === 'www.avaram.co';
+
+if ($isProductionHost) {
+    define('WP_USE_THEMES', true);
+    require __DIR__ . '/wordpress/wp-blog-header.php';
+    exit;
+}
+
+$wordpressHome = '/wordpress/';
 header('Location: ' . $wordpressHome, true, 302);
 ?>
 <!doctype html>
