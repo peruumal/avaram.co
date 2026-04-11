@@ -25,24 +25,33 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -p "$DEPLOY_PORT" "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts
 
-      - name: Deploy via rsync
+      - name: Deploy custom pages and assets
         run: |
-          rsync -az --delete \
+          # Sync root-level custom files.
+          # The server has WP core at public_html root already; we don't touch those.
+          rsync -az \
             --exclude='.git/' \
             --exclude='.github/' \
-            --exclude='wordpress/wp-content/uploads/' \
-            --exclude='wordpress/wp-content/cache/' \
-            --exclude='wordpress/wp-content/upgrade/' \
+            --exclude='wordpress/' \
             --exclude='data/bookings.json' \
-            ./ "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ secrets.DEPLOY_PATH }}"
+            ./ "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ secrets.DEPLOY_PATH }}/"
 
-      - name: Post-deploy permissions and cache flush
+      - name: Deploy theme and custom plugins
+        run: |
+          # Sync only wp-content (theme + plugins we own); server uploads/cache stay intact.
+          rsync -az \
+            --exclude='uploads/' \
+            --exclude='cache/' \
+            --exclude='upgrade/' \
+            wordpress/wp-content/ "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ secrets.DEPLOY_PATH }}/wp-content/"
+
+      - name: Post-deploy permissions
         run: |
           ssh -p "$DEPLOY_PORT" "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" << 'EOF'
             cd "${{ secrets.DEPLOY_PATH }}"
             find . -type d -exec chmod 755 {} \;
             find . -type f -exec chmod 644 {} \;
-            if [ -f "wordpress/wp-content/themes/avaramco/functions.php" ]; then
+            if [ -f "wp-content/themes/avaramco/functions.php" ]; then
               echo "Theme present: avaramco"
             fi
           EOF

@@ -6,7 +6,11 @@ $isProductionHost = $host === 'avaram.co' || $host === 'www.avaram.co';
 
 if ($isProductionHost) {
     define('WP_USE_THEMES', true);
-    require __DIR__ . '/wordpress/wp-blog-header.php';
+    // On production WP lives at public_html root; locally it's in /wordpress/
+    $wpBlogHeader = file_exists(__DIR__ . '/wp-blog-header.php')
+        ? __DIR__ . '/wp-blog-header.php'
+        : __DIR__ . '/wordpress/wp-blog-header.php';
+    require $wpBlogHeader;
     exit;
 }
 
