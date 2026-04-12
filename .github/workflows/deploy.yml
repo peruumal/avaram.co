@@ -29,25 +29,28 @@ jobs:
             sudo apt-get install -y sshpass >/dev/null 2>&1
           fi
 
-          # Deploy root-level custom files (exclude WP subdir and runtime data).
-          tar \
-            --exclude='.git' \
-            --exclude='.github' \
-            --exclude='wordpress' \
-            --exclude='data/bookings.json' \
-            -czf - . \
-            | SSHPASS="$DEPLOY_PASSWORD" sshpass -e ssh -p "$DEPLOY_PORT" "${DEPLOY_USER}@${DEPLOY_HOST}" \
-              "mkdir -p '$DEPLOY_PATH' && tar -xzf - -C '$DEPLOY_PATH'"
+          # Build one deploy bundle locally, then upload once to avoid intermittent second SSH auth failures.
+          rm -rf /tmp/avaram_deploy_bundle
+          mkdir -p /tmp/avaram_deploy_bundle
 
-          # Deploy only wp-content custom code, excluding backups/uploads/cache.
-          tar \
-            --exclude='wp-content/plugins/updraftplus' \
-            --exclude='wp-content/updraft' \
-            --exclude='wp-content/uploads' \
-            --exclude='wp-content/cache' \
-            --exclude='wp-content/upgrade' \
-            -czf - -C wordpress wp-content \
-            | SSHPASS="$DEPLOY_PASSWORD" sshpass -e ssh -p "$DEPLOY_PORT" "${DEPLOY_USER}@${DEPLOY_HOST}" \
+          rsync -a \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            --exclude='wordpress/' \
+            --exclude='data/bookings.json' \
+            ./ /tmp/avaram_deploy_bundle/
+
+          mkdir -p /tmp/avaram_deploy_bundle/wp-content
+          rsync -a \
+            --exclude='plugins/updraftplus/' \
+            --exclude='updraft/' \
+            --exclude='uploads/' \
+            --exclude='cache/' \
+            --exclude='upgrade/' \
+            wordpress/wp-content/ /tmp/avaram_deploy_bundle/wp-content/
+
+          tar -czf - -C /tmp/avaram_deploy_bundle . \
+            | SSHPASS="$DEPLOY_PASSWORD" sshpass -e ssh -o PubkeyAuthentication=no -o PreferredAuthentications=password -p "$DEPLOY_PORT" "${DEPLOY_USER}@${DEPLOY_HOST}" \
               "mkdir -p '$DEPLOY_PATH' && tar -xzf - -C '$DEPLOY_PATH'"
 
       - name: Set permissions on deployed files
