@@ -21,44 +21,34 @@ jobs:
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
           DEPLOY_PASSWORD: ${{ secrets.DEPLOY_PASSWORD }}
         run: |
+          set -euo pipefail
           mkdir -p ~/.ssh
           ssh-keyscan -p "$DEPLOY_PORT" "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null
-          sudo apt-get update -qq
-          sudo apt-get install -y sshpass >/dev/null 2>&1
+          if ! command -v sshpass >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y sshpass >/dev/null 2>&1
+          fi
 
-          run_rsync() {
-            set +e
-            SSHPASS="$DEPLOY_PASSWORD" sshpass -e rsync "$@"
-            code=$?
-            if [ "$code" -ne 0 ]; then
-              echo "rsync returned code=$code, retrying once..."
-              SSHPASS="$DEPLOY_PASSWORD" sshpass -e rsync "$@"
-              code=$?
-            fi
-            set -e
-            if [ "$code" -eq 1 ] || [ "$code" -eq 3 ] || [ "$code" -eq 23 ] || [ "$code" -eq 24 ]; then
-              echo "rsync completed with non-fatal warning (code=$code); continuing."
-              return 0
-            fi
-            return "$code"
-          }
-
-          run_rsync -rlvz \
-            -e "ssh -p $DEPLOY_PORT" \
-            --exclude='.git/' \
-            --exclude='.github/' \
-            --exclude='wordpress/' \
+          # Deploy root-level custom files (exclude WP subdir and runtime data).
+          tar \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='wordpress' \
             --exclude='data/bookings.json' \
-            ./ "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/"
+            -czf - . \
+            | SSHPASS="$DEPLOY_PASSWORD" sshpass -e ssh -p "$DEPLOY_PORT" "${DEPLOY_USER}@${DEPLOY_HOST}" \
+              "mkdir -p '$DEPLOY_PATH' && tar -xzf - -C '$DEPLOY_PATH'"
 
-          run_rsync -rlvz \
-            -e "ssh -p $DEPLOY_PORT" \
-            --exclude='plugins/updraftplus/' \
-            --exclude='updraft/' \
-            --exclude='uploads/' \
-            --exclude='cache/' \
-            --exclude='upgrade/' \
-            wordpress/wp-content/ "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/wp-content/"
+          # Deploy only wp-content custom code, excluding backups/uploads/cache.
+          tar \
+            --exclude='wp-content/plugins/updraftplus' \
+            --exclude='wp-content/updraft' \
+            --exclude='wp-content/uploads' \
+            --exclude='wp-content/cache' \
+            --exclude='wp-content/upgrade' \
+            -czf - -C wordpress wp-content \
+            | SSHPASS="$DEPLOY_PASSWORD" sshpass -e ssh -p "$DEPLOY_PORT" "${DEPLOY_USER}@${DEPLOY_HOST}" \
+              "mkdir -p '$DEPLOY_PATH' && tar -xzf - -C '$DEPLOY_PATH'"
 
       - name: Set permissions on deployed files
         continue-on-error: true
