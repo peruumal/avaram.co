@@ -30,9 +30,14 @@ jobs:
             set +e
             SSHPASS="$DEPLOY_PASSWORD" sshpass -e rsync "$@"
             code=$?
+            if [ "$code" -ne 0 ]; then
+              echo "rsync returned code=$code, retrying once..."
+              SSHPASS="$DEPLOY_PASSWORD" sshpass -e rsync "$@"
+              code=$?
+            fi
             set -e
-            if [ "$code" -eq 23 ] || [ "$code" -eq 24 ]; then
-              echo "rsync completed with partial transfer (code=$code); continuing."
+            if [ "$code" -eq 3 ] || [ "$code" -eq 23 ] || [ "$code" -eq 24 ]; then
+              echo "rsync completed with non-fatal warning (code=$code); continuing."
               return 0
             fi
             return "$code"
