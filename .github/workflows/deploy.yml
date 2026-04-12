@@ -102,17 +102,17 @@ jobs:
         continue-on-error: true
         run: |
           if [ "$AUTH_MODE" = "password" ]; then
-            SSHPASS="$DEPLOY_PASSWORD" sshpass -e ssh -p "$DEPLOY_PORT" "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" << 'EOF'
+            SSHPASS="$DEPLOY_PASSWORD" sshpass -e ssh -p "$DEPLOY_PORT" "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" << EOF
 cd "${{ secrets.DEPLOY_PATH }}"
 find . -type d -print0 | xargs -0 chmod 755
 find . -type f -print0 | xargs -0 chmod 644
 test -f wp-content/themes/avaramco/functions.php && echo "Theme present: avaramco"
-            EOF
+EOF
           else
-            ssh -i ~/.ssh/deploy_key -p "$DEPLOY_PORT" "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" << 'EOF'
+            ssh -i ~/.ssh/deploy_key -p "$DEPLOY_PORT" "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" << EOF
 cd "${{ secrets.DEPLOY_PATH }}"
 find . -type d -print0 | xargs -0 chmod 755
 find . -type f -print0 | xargs -0 chmod 644
 test -f wp-content/themes/avaramco/functions.php && echo "Theme present: avaramco"
-            EOF
+EOF
           fi
