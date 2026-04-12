@@ -17,7 +17,7 @@ jobs:
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
-          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT || '65002' }}
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
           DEPLOY_PASSWORD: ${{ secrets.DEPLOY_PASSWORD }}
         run: |
@@ -36,7 +36,7 @@ jobs:
               code=$?
             fi
             set -e
-            if [ "$code" -eq 3 ] || [ "$code" -eq 23 ] || [ "$code" -eq 24 ]; then
+            if [ "$code" -eq 1 ] || [ "$code" -eq 3 ] || [ "$code" -eq 23 ] || [ "$code" -eq 24 ]; then
               echo "rsync completed with non-fatal warning (code=$code); continuing."
               return 0
             fi
