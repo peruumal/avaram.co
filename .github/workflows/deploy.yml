@@ -38,6 +38,14 @@ jobs:
             --exclude='.github/' \
             --exclude='wordpress/' \
             --exclude='data/bookings.json' \
+            --exclude='wp-login.php' \
+            --exclude='wp-cron.php' \
+            --exclude='wp-activate.php' \
+            --exclude='wp-comments-post.php' \
+            --exclude='wp-signup.php' \
+            --exclude='xmlrpc.php' \
+            --exclude='wp-admin/' \
+            --exclude='wp-json/' \
             ./ /tmp/avaram_deploy_bundle/
 
           mkdir -p /tmp/avaram_deploy_bundle/wp-content
@@ -66,7 +74,7 @@ jobs:
           if ! command -v sshpass >/dev/null 2>&1; then
             sudo apt-get install -y sshpass >/dev/null 2>&1
           fi
-          SSHPASS="$DEPLOY_PASSWORD" sshpass -e ssh -o PubkeyAuthentication=no -o PreferredAuthentications=password -p "$DEPLOY_PORT" "${DEPLOY_USER}@${DEPLOY_HOST}" << 'EOF'
+          SSHPASS="$DEPLOY_PASSWORD" sshpass -e ssh -o PubkeyAuthentication=no -o PreferredAuthentications=password -p "$DEPLOY_PORT" "${DEPLOY_USER}@${DEPLOY_HOST}" << "EOF"
             set -e
             cd "${DEPLOY_PATH}"
             # Keep directories executable and files non-executable.
