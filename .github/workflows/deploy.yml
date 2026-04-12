@@ -11,14 +11,25 @@ jobs:
     runs-on: ubuntu-latest
     env:
       DEPLOY_PORT: ${{ secrets.DEPLOY_PORT || '22' }}
+      DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+      DEPLOY_SSH_KEY_B64: ${{ secrets.DEPLOY_SSH_KEY_B64 }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup SSH key
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          if [ -n "$DEPLOY_SSH_KEY_B64" ]; then
+            echo "$DEPLOY_SSH_KEY_B64" | base64 -d > ~/.ssh/deploy_key
+          elif [ -n "$DEPLOY_SSH_KEY" ]; then
+            printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          else
+            echo "Missing SSH key secret. Set DEPLOY_SSH_KEY or DEPLOY_SSH_KEY_B64."
+            exit 1
+          fi
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keygen -y -f ~/.ssh/deploy_key > /dev/null
 
       - name: Add host key
         run: |
@@ -30,6 +41,7 @@ jobs:
           # Sync root-level custom files.
           # The server has WP core at public_html root already; we don't touch those.
           rsync -az \
+            -e "ssh -i ~/.ssh/deploy_key -p $DEPLOY_PORT" \
             --exclude='.git/' \
             --exclude='.github/' \
             --exclude='wordpress/' \
@@ -40,6 +52,7 @@ jobs:
         run: |
           # Sync only wp-content (theme + plugins we own); server uploads/cache stay intact.
           rsync -az \
+            -e "ssh -i ~/.ssh/deploy_key -p $DEPLOY_PORT" \
             --exclude='uploads/' \
             --exclude='cache/' \
             --exclude='upgrade/' \
@@ -47,7 +60,7 @@ jobs:
 
       - name: Post-deploy permissions
         run: |
-          ssh -p "$DEPLOY_PORT" "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" << 'EOF'
+          ssh -i ~/.ssh/deploy_key -p "$DEPLOY_PORT" "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" << 'EOF'
             cd "${{ secrets.DEPLOY_PATH }}"
             find . -type d -exec chmod 755 {} \;
             find . -type f -exec chmod 644 {} \;
