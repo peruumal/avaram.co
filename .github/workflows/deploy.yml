@@ -61,7 +61,7 @@ jobs:
             | SSHPASS="$DEPLOY_PASSWORD" sshpass -e ssh -o PubkeyAuthentication=no -o PreferredAuthentications=password -p "$DEPLOY_PORT" "${DEPLOY_USER}@${DEPLOY_HOST}" \
               "mkdir -p '$DEPLOY_PATH' && tar -xzf - -C '$DEPLOY_PATH'"
 
-      - name: Set permissions on deployed files
+      - name: Cleanup stale wrapper files and fix permissions
         continue-on-error: true
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
@@ -74,15 +74,60 @@ jobs:
           if ! command -v sshpass >/dev/null 2>&1; then
             sudo apt-get install -y sshpass >/dev/null 2>&1
           fi
-          SSHPASS="$DEPLOY_PASSWORD" sshpass -e ssh -o PubkeyAuthentication=no -o PreferredAuthentications=password -p "$DEPLOY_PORT" "${DEPLOY_USER}@${DEPLOY_HOST}" << "EOF"
+          # Use unquoted heredoc so $DEPLOY_PATH expands locally;
+          # remote-side loop variables are escaped with \$ to prevent local expansion.
+          SSHPASS="$DEPLOY_PASSWORD" sshpass -e ssh -o PubkeyAuthentication=no -o PreferredAuthentications=password -p "$DEPLOY_PORT" "${DEPLOY_USER}@${DEPLOY_HOST}" bash << ENDSSH
             set -e
-            cd "${DEPLOY_PATH}"
-            # Keep directories executable and files non-executable.
+            cd "$DEPLOY_PATH"
+
+            # Remove stale local-redirect wrapper files that overwrote WP core on previous deploys.
+            for f in wp-login.php wp-cron.php wp-activate.php wp-comments-post.php wp-signup.php xmlrpc.php; do
+              if [ -f "\$f" ]; then
+                size=\$(wc -c < "\$f")
+                if [ "\$size" -lt 500 ]; then
+                  rm -f "\$f"
+                  echo "REMOVED_WRAPPER: \$f"
+                else
+                  echo "KEPT_REAL_FILE: \$f (\${size} bytes)"
+                fi
+              fi
+            done
+
+            # Remove stale wp-json/index.php redirect wrapper if present.
+            if [ -f "wp-json/index.php" ]; then
+              sz=\$(wc -c < "wp-json/index.php")
+              if [ "\$sz" -lt 500 ]; then
+                rm -f wp-json/index.php
+                echo "REMOVED_WRAPPER: wp-json/index.php"
+              fi
+            fi
+
+            # Remove stale wp-admin/index.php redirect wrapper if present.
+            if [ -f "wp-admin/index.php" ]; then
+              sz=\$(wc -c < "wp-admin/index.php")
+              if [ "\$sz" -lt 500 ]; then
+                rm -f wp-admin/index.php
+                echo "REMOVED_WRAPPER: wp-admin/index.php"
+              fi
+            fi
+
+            # Diagnostic: report whether WP core files are present at deploy path.
+            for probe in wp-blog-header.php wp-load.php wp-settings.php wp-config.php; do
+              if [ -f "\$probe" ]; then
+                echo "WP_CORE_PRESENT: \$probe"
+              else
+                echo "WP_CORE_MISSING: \$probe"
+              fi
+            done
+
+            # Fix permissions: directories 755, files 644.
             find . -type d -exec chmod 755 {} +
             find . -type f -exec chmod 644 {} +
+
+            # Theme check.
             if [ -f "wp-content/themes/avaramco/functions.php" ]; then
               echo "OK_THEME_FOUND"
             else
               echo "WARNING_THEME_NOT_FOUND"
             fi
-          EOF
+          ENDSSH
