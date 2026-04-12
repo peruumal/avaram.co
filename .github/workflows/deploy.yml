@@ -12,35 +12,45 @@ jobs:
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       DEPLOY_PORT: ${{ secrets.DEPLOY_PORT || '22' }}
+      DEPLOY_PASSWORD: ${{ secrets.DEPLOY_PASSWORD }}
       DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
       DEPLOY_SSH_KEY_B64: ${{ secrets.DEPLOY_SSH_KEY_B64 }}
     steps:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Setup SSH key
+      - name: Configure SSH authentication
         run: |
           mkdir -p ~/.ssh
-          if [ -n "$DEPLOY_SSH_KEY_B64" ]; then
-            # Accept either raw base64 or mistakenly prefixed form: DEPLOY_SSH_KEY_B64=...
-            B64_VALUE="$DEPLOY_SSH_KEY_B64"
-            B64_VALUE="${B64_VALUE#DEPLOY_SSH_KEY_B64=}"
-            B64_VALUE="${B64_VALUE%\"}"
-            B64_VALUE="${B64_VALUE#\"}"
-            # Keep only base64-safe chars to tolerate accidental prompt chars like '%' in pasted values.
-            B64_CLEANED="$(printf '%s' "$B64_VALUE" | tr -cd 'A-Za-z0-9+/=' )"
-            if ! printf '%s' "$B64_CLEANED" | base64 -d > ~/.ssh/deploy_key; then
-              echo "Invalid DEPLOY_SSH_KEY_B64. Paste only the base64 value."
+
+          # Prefer password auth when available to avoid key-format paste issues in secrets UI.
+          if [ -n "$DEPLOY_PASSWORD" ]; then
+            sudo apt-get update
+            sudo apt-get install -y sshpass
+            echo "AUTH_MODE=password" >> "$GITHUB_ENV"
+          else
+            if [ -n "$DEPLOY_SSH_KEY_B64" ]; then
+              # Accept either raw base64 or mistakenly prefixed form: DEPLOY_SSH_KEY_B64=...
+              B64_VALUE="$DEPLOY_SSH_KEY_B64"
+              B64_VALUE="${B64_VALUE#DEPLOY_SSH_KEY_B64=}"
+              B64_VALUE="${B64_VALUE%\"}"
+              B64_VALUE="${B64_VALUE#\"}"
+              # Keep only base64-safe chars to tolerate accidental prompt chars like '%' in pasted values.
+              B64_CLEANED="$(printf '%s' "$B64_VALUE" | tr -cd 'A-Za-z0-9+/=' )"
+              if ! printf '%s' "$B64_CLEANED" | base64 -d > ~/.ssh/deploy_key; then
+                echo "Invalid DEPLOY_SSH_KEY_B64. Paste only the base64 value."
+                exit 1
+              fi
+            elif [ -n "$DEPLOY_SSH_KEY" ]; then
+              printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+            else
+              echo "Missing SSH auth. Set DEPLOY_PASSWORD or DEPLOY_SSH_KEY/DEPLOY_SSH_KEY_B64."
               exit 1
             fi
-          elif [ -n "$DEPLOY_SSH_KEY" ]; then
-            printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
-          else
-            echo "Missing SSH key secret. Set DEPLOY_SSH_KEY or DEPLOY_SSH_KEY_B64."
-            exit 1
+            chmod 600 ~/.ssh/deploy_key
+            ssh-keygen -y -f ~/.ssh/deploy_key > /dev/null
+            echo "AUTH_MODE=key" >> "$GITHUB_ENV"
           fi
-          chmod 600 ~/.ssh/deploy_key
-          ssh-keygen -y -f ~/.ssh/deploy_key > /dev/null
 
       - name: Add host key
         run: |
@@ -51,31 +61,61 @@ jobs:
         run: |
           # Sync root-level custom files.
           # The server has WP core at public_html root already; we don't touch those.
-          rsync -az \
-            -e "ssh -i ~/.ssh/deploy_key -p $DEPLOY_PORT" \
-            --exclude='.git/' \
-            --exclude='.github/' \
-            --exclude='wordpress/' \
-            --exclude='data/bookings.json' \
-            ./ "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ secrets.DEPLOY_PATH }}/"
+          if [ "$AUTH_MODE" = "password" ]; then
+            SSHPASS="$DEPLOY_PASSWORD" sshpass -e rsync -az \
+              -e "ssh -p $DEPLOY_PORT" \
+              --exclude='.git/' \
+              --exclude='.github/' \
+              --exclude='wordpress/' \
+              --exclude='data/bookings.json' \
+              ./ "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ secrets.DEPLOY_PATH }}/"
+          else
+            rsync -az \
+              -e "ssh -i ~/.ssh/deploy_key -p $DEPLOY_PORT" \
+              --exclude='.git/' \
+              --exclude='.github/' \
+              --exclude='wordpress/' \
+              --exclude='data/bookings.json' \
+              ./ "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ secrets.DEPLOY_PATH }}/"
+          fi
 
       - name: Deploy theme and custom plugins
         run: |
           # Sync only wp-content (theme + plugins we own); server uploads/cache stay intact.
-          rsync -az \
-            -e "ssh -i ~/.ssh/deploy_key -p $DEPLOY_PORT" \
-            --exclude='uploads/' \
-            --exclude='cache/' \
-            --exclude='upgrade/' \
-            wordpress/wp-content/ "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ secrets.DEPLOY_PATH }}/wp-content/"
+          if [ "$AUTH_MODE" = "password" ]; then
+            SSHPASS="$DEPLOY_PASSWORD" sshpass -e rsync -az \
+              -e "ssh -p $DEPLOY_PORT" \
+              --exclude='uploads/' \
+              --exclude='cache/' \
+              --exclude='upgrade/' \
+              wordpress/wp-content/ "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ secrets.DEPLOY_PATH }}/wp-content/"
+          else
+            rsync -az \
+              -e "ssh -i ~/.ssh/deploy_key -p $DEPLOY_PORT" \
+              --exclude='uploads/' \
+              --exclude='cache/' \
+              --exclude='upgrade/' \
+              wordpress/wp-content/ "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${{ secrets.DEPLOY_PATH }}/wp-content/"
+          fi
 
       - name: Post-deploy permissions
         run: |
-          ssh -i ~/.ssh/deploy_key -p "$DEPLOY_PORT" "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" << 'EOF'
-            cd "${{ secrets.DEPLOY_PATH }}"
-            find . -type d -exec chmod 755 {} \;
-            find . -type f -exec chmod 644 {} \;
-            if [ -f "wp-content/themes/avaramco/functions.php" ]; then
-              echo "Theme present: avaramco"
-            fi
-          EOF
+          if [ "$AUTH_MODE" = "password" ]; then
+            SSHPASS="$DEPLOY_PASSWORD" sshpass -e ssh -p "$DEPLOY_PORT" "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" << 'EOF'
+              cd "${{ secrets.DEPLOY_PATH }}"
+              find . -type d -exec chmod 755 {} \;
+              find . -type f -exec chmod 644 {} \;
+              if [ -f "wp-content/themes/avaramco/functions.php" ]; then
+                echo "Theme present: avaramco"
+              fi
+            EOF
+          else
+            ssh -i ~/.ssh/deploy_key -p "$DEPLOY_PORT" "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" << 'EOF'
+              cd "${{ secrets.DEPLOY_PATH }}"
+              find . -type d -exec chmod 755 {} \;
+              find . -type f -exec chmod 644 {} \;
+              if [ -f "wp-content/themes/avaramco/functions.php" ]; then
+                echo "Theme present: avaramco"
+              fi
+            EOF
+          fi
