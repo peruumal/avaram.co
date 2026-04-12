@@ -102,20 +102,20 @@ jobs:
         run: |
           if [ "$AUTH_MODE" = "password" ]; then
             SSHPASS="$DEPLOY_PASSWORD" sshpass -e ssh -p "$DEPLOY_PORT" "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" << 'EOF'
-              cd "${{ secrets.DEPLOY_PATH }}"
-              find . -type d -exec chmod 755 {} \;
-              find . -type f -exec chmod 644 {} \;
-              if [ -f "wp-content/themes/avaramco/functions.php" ]; then
-                echo "Theme present: avaramco"
-              fi
+cd "${{ secrets.DEPLOY_PATH }}"
+find . -type d -exec chmod 755 {} \;
+find . -type f -exec chmod 644 {} \;
+if [ -f "wp-content/themes/avaramco/functions.php" ]; then
+  echo "Theme present: avaramco"
+fi
             EOF
           else
             ssh -i ~/.ssh/deploy_key -p "$DEPLOY_PORT" "${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}" << 'EOF'
-              cd "${{ secrets.DEPLOY_PATH }}"
-              find . -type d -exec chmod 755 {} \;
-              find . -type f -exec chmod 644 {} \;
-              if [ -f "wp-content/themes/avaramco/functions.php" ]; then
-                echo "Theme present: avaramco"
-              fi
+cd "${{ secrets.DEPLOY_PATH }}"
+find . -type d -exec chmod 755 {} \;
+find . -type f -exec chmod 644 {} \;
+if [ -f "wp-content/themes/avaramco/functions.php" ]; then
+  echo "Theme present: avaramco"
+fi
             EOF
           fi
