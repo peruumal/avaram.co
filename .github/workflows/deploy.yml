@@ -51,9 +51,4 @@ jobs:
           DEPLOY_PASSWORD: ${{ secrets.DEPLOY_PASSWORD }}
         run: |
           sudo apt-get install -y sshpass >/dev/null 2>&1
-          SSHPASS="$DEPLOY_PASSWORD" sshpass -e ssh -p "$DEPLOY_PORT" "${DEPLOY_USER}@${DEPLOY_HOST}" bash -s << 'REMOTESCRIPT'
-          cd "$DEPLOY_PATH"
-          find . -type d -exec chmod 755 {} + 2>/dev/null
-          find . -type f -exec chmod 644 {} + 2>/dev/null
-          test -f wp-content/themes/avaramco/functions.php && echo "✓ Theme found"
-REMOTESCRIPT
+          SSHPASS="$DEPLOY_PASSWORD" sshpass -e ssh -p "$DEPLOY_PORT" "${DEPLOY_USER}@${DEPLOY_HOST}" "chmod -R 755 '$DEPLOY_PATH'/*/ && chmod -R 644 '$DEPLOY_PATH'/* && test -f '$DEPLOY_PATH'/wp-content/themes/avaramco/functions.php && echo OK_THEME_FOUND || echo WARNING_THEME_NOT_FOUND"
