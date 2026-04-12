@@ -22,7 +22,13 @@ jobs:
         run: |
           mkdir -p ~/.ssh
           if [ -n "$DEPLOY_SSH_KEY_B64" ]; then
-            echo "$DEPLOY_SSH_KEY_B64" | base64 -d > ~/.ssh/deploy_key
+            # Accept either raw base64 or mistakenly prefixed form: DEPLOY_SSH_KEY_B64=...
+            B64_VALUE="$DEPLOY_SSH_KEY_B64"
+            B64_VALUE="${B64_VALUE#DEPLOY_SSH_KEY_B64=}"
+            if ! printf '%s' "$B64_VALUE" | tr -d ' \r\n\t' | base64 -d > ~/.ssh/deploy_key; then
+              echo "Invalid DEPLOY_SSH_KEY_B64. Paste only the base64 value."
+              exit 1
+            fi
           elif [ -n "$DEPLOY_SSH_KEY" ]; then
             printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
           else
