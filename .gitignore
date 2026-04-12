@@ -15,6 +15,7 @@ wordpress/wp-content/upgrade/
 wordpress/wp-content/uploads/
 wordpress/wp-content/ai1wm-backups/
 wordpress/wp-content/updraft/
+wordpress/wp-content/plugins/updraftplus/
 
 # Local environment secrets
 wordpress/wp-config.php
