@@ -62,5 +62,19 @@ jobs:
           DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
           DEPLOY_PASSWORD: ${{ secrets.DEPLOY_PASSWORD }}
         run: |
-          sudo apt-get install -y sshpass >/dev/null 2>&1
-          SSHPASS="$DEPLOY_PASSWORD" sshpass -e ssh -p "$DEPLOY_PORT" "${DEPLOY_USER}@${DEPLOY_HOST}" "chmod -R 755 '$DEPLOY_PATH'/*/ && chmod -R 644 '$DEPLOY_PATH'/* && test -f '$DEPLOY_PATH'/wp-content/themes/avaramco/functions.php && echo OK_THEME_FOUND || echo WARNING_THEME_NOT_FOUND"
+          set -euo pipefail
+          if ! command -v sshpass >/dev/null 2>&1; then
+            sudo apt-get install -y sshpass >/dev/null 2>&1
+          fi
+          SSHPASS="$DEPLOY_PASSWORD" sshpass -e ssh -o PubkeyAuthentication=no -o PreferredAuthentications=password -p "$DEPLOY_PORT" "${DEPLOY_USER}@${DEPLOY_HOST}" << 'EOF'
+            set -e
+            cd "${DEPLOY_PATH}"
+            # Keep directories executable and files non-executable.
+            find . -type d -exec chmod 755 {} +
+            find . -type f -exec chmod 644 {} +
+            if [ -f "wp-content/themes/avaramco/functions.php" ]; then
+              echo "OK_THEME_FOUND"
+            else
+              echo "WARNING_THEME_NOT_FOUND"
+            fi
+          EOF
