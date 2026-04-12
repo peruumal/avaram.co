@@ -25,16 +25,28 @@ jobs:
           ssh-keyscan -p "$DEPLOY_PORT" "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null
           sudo apt-get update -qq
           sudo apt-get install -y sshpass >/dev/null 2>&1
-          
-          SSHPASS="$DEPLOY_PASSWORD" sshpass -e rsync -avz --delete \
+
+          run_rsync() {
+            set +e
+            SSHPASS="$DEPLOY_PASSWORD" sshpass -e rsync "$@"
+            code=$?
+            set -e
+            if [ "$code" -eq 23 ] || [ "$code" -eq 24 ]; then
+              echo "rsync completed with partial transfer (code=$code); continuing."
+              return 0
+            fi
+            return "$code"
+          }
+
+          run_rsync -rlvz --delete \
             -e "ssh -p $DEPLOY_PORT" \
             --exclude='.git/' \
             --exclude='.github/' \
             --exclude='wordpress/' \
             --exclude='data/bookings.json' \
             ./ "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/"
-          
-          SSHPASS="$DEPLOY_PASSWORD" sshpass -e rsync -avz \
+
+          run_rsync -rlvz \
             -e "ssh -p $DEPLOY_PORT" \
             --exclude='uploads/' \
             --exclude='cache/' \
