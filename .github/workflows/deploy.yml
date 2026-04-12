@@ -38,7 +38,7 @@ jobs:
             return "$code"
           }
 
-          run_rsync -rlvz --delete \
+          run_rsync -rlvz \
             -e "ssh -p $DEPLOY_PORT" \
             --exclude='.git/' \
             --exclude='.github/' \
@@ -48,6 +48,8 @@ jobs:
 
           run_rsync -rlvz \
             -e "ssh -p $DEPLOY_PORT" \
+            --exclude='plugins/updraftplus/' \
+            --exclude='updraft/' \
             --exclude='uploads/' \
             --exclude='cache/' \
             --exclude='upgrade/' \
