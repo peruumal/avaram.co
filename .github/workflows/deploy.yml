@@ -10,12 +10,13 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       DEPLOY_PORT: ${{ secrets.DEPLOY_PORT || '22' }}
       DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
       DEPLOY_SSH_KEY_B64: ${{ secrets.DEPLOY_SSH_KEY_B64 }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup SSH key
         run: |
