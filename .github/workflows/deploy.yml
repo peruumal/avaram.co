@@ -25,7 +25,11 @@ jobs:
             # Accept either raw base64 or mistakenly prefixed form: DEPLOY_SSH_KEY_B64=...
             B64_VALUE="$DEPLOY_SSH_KEY_B64"
             B64_VALUE="${B64_VALUE#DEPLOY_SSH_KEY_B64=}"
-            if ! printf '%s' "$B64_VALUE" | tr -d ' \r\n\t' | base64 -d > ~/.ssh/deploy_key; then
+            B64_VALUE="${B64_VALUE%\"}"
+            B64_VALUE="${B64_VALUE#\"}"
+            # Keep only base64-safe chars to tolerate accidental prompt chars like '%' in pasted values.
+            B64_CLEANED="$(printf '%s' "$B64_VALUE" | tr -cd 'A-Za-z0-9+/=' )"
+            if ! printf '%s' "$B64_CLEANED" | base64 -d > ~/.ssh/deploy_key; then
               echo "Invalid DEPLOY_SSH_KEY_B64. Paste only the base64 value."
               exit 1
             fi
