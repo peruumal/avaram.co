@@ -19,18 +19,27 @@
  * @package WordPress
  */
 
-// ** Database settings - You can get this info from your web host ** //
-/** The name of the database for WordPress */
-define('DB_NAME', 'local');
+// ** Database settings - Detect environment (local vs production) ** //
 
-/** Database username */
-define('DB_USER', 'root');
+// Determine if running locally or on production
+$isProduction = !empty($_SERVER['HTTP_HOST']) && (
+	strpos($_SERVER['HTTP_HOST'], 'avaram.co') !== false ||
+	strpos($_SERVER['HTTP_HOST'], 'www.avaram.co') !== false
+);
 
-/** Database password */
-define('DB_PASSWORD', 'root');
-
-/** Database hostname */
-define('DB_HOST', 'localhost:/Users/perumal/Library/Application Support/Local/run/rZqxWMU3S/mysql/mysqld.sock');
+if ($isProduction) {
+	// Hostinger production database settings
+	define('DB_NAME', 'u250830615_fpb7K');
+	define('DB_USER', 'u250830615_Yf7k0');
+	define('DB_PASSWORD', 'Usausa@@167');
+	define('DB_HOST', 'localhost');
+} else {
+	// Local database settings (Local by Flywheel)
+	define('DB_NAME', 'local');
+	define('DB_USER', 'root');
+	define('DB_PASSWORD', 'root');
+	define('DB_HOST', 'localhost:/Users/perumal/Library/Application Support/Local/run/rZqxWMU3S/mysql/mysqld.sock');
+}
 
 /** Database charset to use in creating database tables. */
 define('DB_CHARSET', 'utf8');
