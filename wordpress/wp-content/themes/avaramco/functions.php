@@ -354,10 +354,10 @@ function avaramco_rewrite_legacy_content_urls(string $content): string
             }
 
             if (preg_match('/\bsrc\s*=\s*(["\']).*?\1/i', $imgTag)) {
-                return preg_replace('/\bsrc\s*=\s*(["\']).*?\1/i', 'src="$resolvedUrl"', $imgTag, 1) ?? $imgTag;
+                return preg_replace('/\bsrc\s*=\s*(["\']).*?\1/i', 'src="' . esc_url($resolvedUrl) . '"', $imgTag, 1) ?? $imgTag;
             }
 
-            return preg_replace('/<img\b/i', '<img src="$resolvedUrl"', $imgTag, 1) ?? $imgTag;
+            return preg_replace('/<img\b/i', '<img src="' . esc_url($resolvedUrl) . '"', $imgTag, 1) ?? $imgTag;
         },
         $content
     );
