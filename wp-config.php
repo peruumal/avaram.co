@@ -21,11 +21,23 @@
 
 // ** Database settings - Detect environment (local vs production) ** //
 
-// Determine if running locally or on production
-$isProduction = !empty($_SERVER['HTTP_HOST']) && (
-	strpos($_SERVER['HTTP_HOST'], 'avaram.co') !== false ||
-	strpos($_SERVER['HTTP_HOST'], 'www.avaram.co') !== false
+$localMysqlSocket = '/Users/perumal/Library/Application Support/Local/run/rZqxWMU3S/mysql/mysqld.sock';
+$httpHost = strtolower((string) ($_SERVER['HTTP_HOST'] ?? ''));
+
+$isLocalHost = $httpHost !== '' && (
+	strpos($httpHost, 'avaramco.local') !== false ||
+	strpos($httpHost, 'localhost') !== false ||
+	strpos($httpHost, '127.0.0.1') !== false ||
+	strpos($httpHost, 'nip.io') !== false ||
+	strpos($httpHost, '192.168.') === 0
 );
+
+if ($httpHost === '') {
+	// CLI safety: infer local environment by Local's socket path.
+	$isLocalHost = file_exists($localMysqlSocket);
+}
+
+$isProduction = !$isLocalHost;
 
 if ($isProduction) {
 	// Hostinger production database settings
@@ -38,7 +50,7 @@ if ($isProduction) {
 	define('DB_NAME', 'local');
 	define('DB_USER', 'root');
 	define('DB_PASSWORD', 'root');
-	define('DB_HOST', 'localhost:/Users/perumal/Library/Application Support/Local/run/rZqxWMU3S/mysql/mysqld.sock');
+	define('DB_HOST', 'localhost:' . $localMysqlSocket);
 }
 
 /** Database charset to use in creating database tables. */
@@ -82,12 +94,22 @@ $table_prefix = 'wp_';
 
 /* Add any custom values between this line and the "stop editing" line. */
 
-// Allow WordPress to detect the correct URL when accessed via different hosts
-// This will be set in wp-admin if needed, but setting WP_SITEURL/WP_HOME here ensures
-// Local's database settings are read correctly.
-// For now, leave commented out and let WordPress detect it; you can uncomment if needed.
-// define('WP_SITEURL', 'http://avaramco.local/wordpress');
-// define('WP_HOME', 'http://avaramco.local/wordpress');
+if ($httpHost !== '') {
+	$forwardedProto = $_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '';
+	$isHttps = $forwardedProto === 'https' || (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+	$protocol = $isHttps ? 'https' : 'http';
+	$host = $_SERVER['HTTP_HOST'];
+	$siteBase = $protocol . '://' . $host;
+	$wpPathSuffix = file_exists(__DIR__ . '/wp-settings.php') ? '' : '/wordpress';
+
+	if (!defined('WP_SITEURL')) {
+		define('WP_SITEURL', $siteBase . $wpPathSuffix);
+	}
+
+	if (!defined('WP_HOME')) {
+		define('WP_HOME', $siteBase);
+	}
+}
 
 
 
@@ -104,7 +126,7 @@ $table_prefix = 'wp_';
  * @link https://wordpress.org/support/article/debugging-in-wordpress/
  */
 if (!defined('WP_DEBUG')) {
-	define('WP_DEBUG', true);
+	define('WP_DEBUG', !$isProduction);
 }
 
 if (!defined('WP_DEBUG_LOG')) {
@@ -121,8 +143,8 @@ if (!defined('WP_DEBUG_DISPLAY')) {
 
 /** Absolute path to the WordPress directory. */
 if (!defined('ABSPATH')) {
-	// WordPress is installed in /wordpress/ subdirectory
-	define('ABSPATH', __DIR__ . '/wordpress/');
+	$wpRootPath = file_exists(__DIR__ . '/wp-settings.php') ? __DIR__ : __DIR__ . '/wordpress';
+	define('ABSPATH', $wpRootPath . '/');
 }
 
 /** Sets up WordPress vars and included files. */

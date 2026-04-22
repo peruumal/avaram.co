@@ -1,8 +1,18 @@
 <?php
 declare(strict_types=1);
 
-$host = $_SERVER['HTTP_HOST'] ?? '';
-$isProductionHost = $host === 'avaram.co' || $host === 'www.avaram.co';
+$host = strtolower((string) ($_SERVER['HTTP_HOST'] ?? ''));
+$normalizedHost = preg_replace('/:\\d+$/', '', $host);
+
+$isLocalHost = $normalizedHost !== '' && (
+    strpos($normalizedHost, 'avaramco.local') !== false ||
+    strpos($normalizedHost, 'localhost') !== false ||
+    strpos($normalizedHost, '127.0.0.1') !== false ||
+    strpos($normalizedHost, 'nip.io') !== false ||
+    strpos($normalizedHost, '192.168.') === 0
+);
+
+$isProductionHost = !$isLocalHost;
 
 if ($isProductionHost) {
     define('WP_USE_THEMES', true);
