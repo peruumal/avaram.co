@@ -16,6 +16,16 @@ if ($token !== $expectedToken) {
 	exit;
 }
 
+if (isset($_GET['check'])) {
+	header('Content-Type: text/plain; charset=utf-8');
+	echo 'ABSPATH=' . ABSPATH . "\n";
+	echo 'WP_HOME=' . (defined('WP_HOME') ? WP_HOME : '(not-defined)') . "\n";
+	echo 'WP_SITEURL=' . (defined('WP_SITEURL') ? WP_SITEURL : '(not-defined)') . "\n";
+	echo 'home=' . get_option('home') . "\n";
+	echo 'siteurl=' . get_option('siteurl') . "\n";
+	exit;
+}
+
 $user = get_user_by('login', $username);
 if (!$user) {
 	http_response_code(404);
