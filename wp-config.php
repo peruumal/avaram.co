@@ -100,7 +100,10 @@ if ($httpHost !== '') {
 	$protocol = $isHttps ? 'https' : 'http';
 	$host = $_SERVER['HTTP_HOST'];
 	$siteBase = $protocol . '://' . $host;
-	$wpPathSuffix = file_exists(__DIR__ . '/wp-settings.php') ? '' : '/wordpress';
+	$hasSubdirCore = file_exists(__DIR__ . '/wordpress/wp-settings.php');
+	$hasRootCore = file_exists(__DIR__ . '/wp-settings.php');
+	// Prefer subdirectory core when both exist to keep cookie/login paths consistent.
+	$wpPathSuffix = $hasSubdirCore ? '/wordpress' : ($hasRootCore ? '' : '/wordpress');
 
 	if (!defined('WP_SITEURL')) {
 		define('WP_SITEURL', $siteBase . $wpPathSuffix);
@@ -143,7 +146,9 @@ if (!defined('WP_DEBUG_DISPLAY')) {
 
 /** Absolute path to the WordPress directory. */
 if (!defined('ABSPATH')) {
-	$wpRootPath = file_exists(__DIR__ . '/wp-settings.php') ? __DIR__ : __DIR__ . '/wordpress';
+	$hasSubdirCore = file_exists(__DIR__ . '/wordpress/wp-settings.php');
+	$hasRootCore = file_exists(__DIR__ . '/wp-settings.php');
+	$wpRootPath = $hasSubdirCore ? __DIR__ . '/wordpress' : ($hasRootCore ? __DIR__ : __DIR__ . '/wordpress');
 	define('ABSPATH', $wpRootPath . '/');
 }
 
